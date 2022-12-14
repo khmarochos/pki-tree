@@ -1,2 +1,45 @@
 ---
-# tasks file for pki-tree
+
+- name: Install the required packages
+  include_tasks: packages.yml
+  when: not (skip_packages | default(false))
+
+- name: Create the PKI base directory
+  file:
+    path: "{{ pki_directory | mandatory }}"
+    state: directory
+    mode: "{{ pki_directory_mode }}"
+    force: no
+
+- name: Initialize variables
+  set_fact:
+    __pki_tree__ca_dictionary: { }
+    __pki_tree__ca_openssl_configuration_block: ""
+
+- name: Comprehend the PKI tree
+  include_tasks: setup_ca_dictionary.yml
+  vars:
+    ca_parameters: "{{ ca_to_define }}"
+    ca_dictionary_variable_name: __pki_tree__ca_dictionary
+    ca_openssl_configuration_block_variable_name: __pki_tree__ca_openssl_configuration_block
+  loop: "{{ pki_ca_list }}"
+  loop_control:
+    loop_var: ca_to_define
+
+- name: Install the OpenSSL configuration file
+  template:
+    src: "openssl.cnf.j2"
+    dest: "{{ pki_openssl_configuration_file }}"
+    mode: 0644
+    force: true
+
+- block:
+  - name: Set up CAs
+    include_tasks: setup_ca.yml
+    vars:
+      ca: "{{ __pki_tree__ca_dictionary[ca_to_setup.ca_name_brief] }}"
+      ca_parent: "{{ __pki_tree__ca_dictionary[ca_to_setup.ca_parent] }}"
+    loop: "{{ pki_ca_list }}"
+    loop_control:
+      loop_var: ca_to_setup
+  when: not (skip_ca_setup | default(false))

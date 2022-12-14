@@ -1,0 +1,33 @@
+---
+
+- name: Determine the distribution
+  setup:
+    gather_subset:
+      - distribution
+
+- name: Define the path to the task to be executed for the distribution
+  set_fact:
+    __pki_tree__packages_task: >-
+      {{
+        role_path
+        ~ '/tasks/packages_'
+        ~ ( ansible_distribution | lower )
+        ~ '.yml'
+      }}
+
+- name: Check if we can handle this distribution
+  stat:
+    path: "{{ __pki_tree__packages_task }}"
+  register: __pki_tree__packages_task_stat
+
+- name: Fail if the distribution isn't supported
+  fail:
+    msg: "Alas, {{ ansible_distribution }} is not supported yet"
+  when: >-
+    not(
+      __pki_tree__packages_task_stat.stat.isreg is defined and
+      __pki_tree__packages_task_stat.stat.isreg
+    )
+
+- name: Install the required software packages
+  include_tasks: "{{ __pki_tree__packages_task }}"

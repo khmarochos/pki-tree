@@ -1,0 +1,15 @@
+---
+
+- name: Install OpenSSL
+  apt:
+    name: openssl
+    state: latest
+  become: yes
+  become_user: root
+        
+- name: Install OpenJDK
+  apt:
+    name: openjdk-8-jre-headless
+    state: latest
+  become: yes
+  become_user: root

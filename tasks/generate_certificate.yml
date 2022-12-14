@@ -1,0 +1,283 @@
+---
+
+#
+# Find the CA
+#
+- name: Prepare the variable for the CA name
+  set_fact:
+    __generate_certificate__ca_name_brief: "{{ ca_name_brief | default(pki_default_ca) }}"
+
+# We have to reset it, as it might be set by one of previous passes :-(
+- name: Clean up the CA settings
+  set_fact:
+    __generate_certificate__ca_parameters:
+
+- name: Load the CA settings
+  set_fact:
+    __generate_certificate__ca_parameters: "{{ __pki_tree__ca_dictionary[__generate_certificate__ca_name_brief] }}"
+  when: ca_name_brief in __pki_tree__ca_dictionary
+
+#
+#
+#
+- name: Determine the certificate name
+  set_fact:
+    __generate_certificate__certificate_name: "{{ certificate_name | mandatory }}"
+
+#
+#
+#
+- name: Determine the certificate file name
+  set_fact:
+    __generate_certificate__certificate_file: "{{ certificate_file }}"
+  when: certificate_file | default(None, true) != None
+
+- name: Determine the certificate file name (fallback)
+  set_fact:
+    __generate_certificate__certificate_file: >-
+      {{
+        __generate_certificate__ca_parameters.ca_certificates_directory | mandatory
+        ~ '/'
+        ~ __generate_certificate__certificate_name
+        ~ pki_basename_certificate_file_postfix
+      }}
+  when: certificate_file | default(None, true) == None
+
+- name: Return the certificate file name if needed
+  set_fact:
+    "{{ result_certificate_file }}": "{{ __generate_certificate__certificate_file }}"
+  when: result_certificate_file | default(None, true) != None
+
+#
+#
+#
+- name: Determine the certificate signing request file name
+  set_fact:
+    __generate_certificate__certificate_signing_request_file: "{{ certificate_signing_request_file }}"
+  when: certificate_signing_request_file | default(None, true) != None
+
+- name: Determine the certificate signing request file name (fallback)
+  set_fact:
+    __generate_certificate__certificate_signing_request_file: >-
+      {{
+        __generate_certificate__ca_parameters.ca_certificate_signing_requests_directory | mandatory
+        ~ '/'
+        ~ __generate_certificate__certificate_name
+        ~ pki_basename_certificate_signing_requests_file_postfix
+      }}
+  when: certificate_signing_request_file | default(None, true) == None
+
+- name: Return the certificate signing request file name if needed
+  set_fact:
+    "{{ result_certificate_signing_request_file }}": "{{ __generate_certificate__certificate_signing_request_file }}"
+  when: result_certificate_signing_request_file | default(None, true) != None
+
+#
+#
+#
+- name: Determine the certificate term
+  set_fact:
+    __generate_certificate__certificate_term: "{{ certificate_term }}"
+  when: certificate_term | default(None, true) != None
+
+- name: Determine the certificate term (fallback)
+  set_fact:
+    __generate_certificate__certificate_term: "{{ __generate_certificate__ca_parameters.ca_term | mandatory }}"
+  when: certificate_term | default(None, true) == None
+
+- name: Return the certificate term if needed
+  set_fact:
+    "{{ result_certificate_term }}": "{{ __generate_certificate__certificate_term }}"
+  when: result_certificate_term | default(None, true) != None
+
+#
+#
+#
+- name: Determine the key encryption method
+  set_fact:
+    __generate_certificate__key_is_encrypted: "{{ key_is_encrypted | default(false) }}"
+
+- name:
+  set_fact:
+    "{{ result_key_is_encrypted }}": "{{ __generate_certificate__key_is_encrypted }}"
+  when: result_key_is_encrypted | default(None, true) != None
+
+#
+#
+#
+- name: Determine the key file name
+  set_fact:
+    __generate_certificate__key_file: "{{ key_file }}"
+  when: key_file | default(None, true) != None
+
+- name: Determine the key file name (fallback)
+  set_fact:
+    __generate_certificate__key_file: >-
+      {{
+        __generate_certificate__ca_parameters.ca_private_directory | mandatory
+        ~ '/'
+        ~ __generate_certificate__certificate_name
+        ~ pki_basename_key_file_postfix
+      }}
+  when: key_file | default(None, true) == None
+
+- name: Return the key file name
+  set_fact:
+    "{{ result_key_file }}": "{{ __generate_certificate__key_file }}"
+  when: result_key_file | default(None, true) != None
+
+#
+#
+#
+- name: Determine the key passphrase file name
+  set_fact:
+    __generate_certificate__key_passphrase_file: "{{ key_passphrase_file }}"
+  when: key_passphrase_file | default(None, true) != None and key_passphrase_file | default(None, true) != None
+
+- name: Determine the key passphrase file name (fallback)
+  set_fact:
+    __generate_certificate__key_passphrase_file: >-
+      {{
+        __generate_certificate__ca_parameters.ca_private_directory | mandatory
+        ~ '/'
+        ~ __generate_certificate__certificate_name
+        ~ pki_basename_key_passphrase_file_postfix
+      }}
+  when: key_passphrase_file | default(None, true) == None
+
+  name: Return the key passphrase file name if needed
+  set_fact:
+    "{{ result_key_passphrase_file }}": "{{ __generate_certificate__key_passphrase_file }}"
+  when: result_key_passphrase_file | default(None, true) != None
+
+#
+#
+#
+- name: Determine the certificate subject
+  set_fact:
+    __generate_certificate__certificate_subject: "{{ certificate_subject }}"
+  when: certificate_subject | default(None, true) != None
+
+- name: Determine the certificate subject (fallback)
+  set_fact:
+    __generate_certificate__certificate_subject: >-
+      {{
+        '/C='
+        ~ __generate_certificate__ca_parameters.pki_subject_country |
+          default(pki_subject_country)
+        ~ '/ST=' ~
+          __generate_certificate__ca_parameters.pki_subject_state_or_province |
+          default(pki_subject_state_or_province)
+        ~ '/L='
+        ~ __generate_certificate__ca_parameters.pki_subject_locality |
+          default(pki_subject_locality)
+        ~ '/O='
+        ~ __generate_certificate__ca_parameters.pki_subject_organization |
+          default(pki_subject_organization)
+        ~ '/OU='
+        ~ __generate_certificate__ca_parameters.pki_subject_organizational_unit |
+          default(pki_subject_organizational_unit)
+        ~ '/CN=' 
+        ~ __generate_certificate__certificate_name
+        ~ '/emailAddress='
+        ~ __generate_certificate__ca_parameters.pki_subject_email_address |
+          default(pki_subject_email_address)
+      }}
+  when: __generate_certificate__certificate_subject | default(None, true) == None
+
+- name: Return the certificate subject if needed
+  set_fact:
+    "{{ result_certificate_subject }}": "{{ __generate_certificate__certificate_subject }}"
+  when: result_certificate_subject | default(None, true) != None
+
+#
+#
+#
+- name: Determine the certificate subject alternative names
+  set_fact:
+    __generate_certificate__certificate_subject_alternative_names: >-
+      {{
+        certificate_subject_alternative_names | map(
+          'regex_replace',
+          '^(.+)$',
+          'DNS:\1'
+        ) | join(',')
+      }}
+  when: certificate_subject_alternative_names | default(None, true) != None
+
+#
+#
+#
+- block:
+
+  - name: "Create the certificate signing request"
+    command:
+      cmd: >
+        openssl
+          req
+          -new
+          -sha256
+          -config {{ pki_openssl_configuration_file | quote }}
+          {% if certificate_extensions | default(None, true) != None %}
+            -extensions {{ certificate_extensions | quote }}
+          {% endif %}
+          -subj {{ __generate_certificate__certificate_subject | quote }}
+          {% if __generate_certificate__certificate_subject_alternative_names | default(None, true) != None %}
+            -addext "subjectAltName = {{ __generate_certificate__certificate_subject_alternative_names | quote }}"
+          {% endif %}
+          -key {{ __generate_certificate__key_file | quote }}
+          {% if __generate_certificate__key_is_encrypted %}
+            -passin file:{{ __generate_certificate__key_passphrase_file | quote }}
+          {% endif %}
+          -out {{ __generate_certificate__certificate_signing_request_file | quote }}
+      creates: "{{ __generate_certificate__certificate_signing_request_file }}"
+
+  - name: "Sign the certificate by the CA"
+    command:
+      cmd: >
+        openssl
+          ca
+          -batch
+          -notext
+          -md sha256
+          -config {{ pki_openssl_configuration_file | quote }}
+          {% if __generate_certificate__ca_parameters %}
+            -name {{ __generate_certificate__ca_parameters.ca_openssl_configuration_section | quote }}
+          {% endif %}
+          {% if certificate_extensions | default(None, true) != None %}
+            -extensions {{ certificate_extensions | quote }}
+          {% endif %}
+          -days {{ __generate_certificate__certificate_term | quote }}
+          {% if __generate_certificate__ca_parameters.ca_key_passphrase_file | default(None, true) != None %}
+            -passin file:{{ __generate_certificate__ca_parameters.ca_key_passphrase_file | quote }}
+          {% endif %}
+          -in {{ __generate_certificate__certificate_signing_request_file | quote }}
+          -out {{ __generate_certificate__certificate_file | quote }}
+      creates: "{{ __generate_certificate__certificate_file }}"
+
+  when: __generate_certificate__ca_parameters | default(None, true) != None
+
+- block: 
+
+  - name: "Issue the self-signed certificate"
+    command:
+      cmd: >
+        openssl
+          req
+          -new
+          -x509
+          -sha256
+          -extensions v3_ca
+          -days {{ __generate_certificate__certificate_term | quote }}
+          -subj {{ __generate_certificate__certificate_subject | quote }}
+          {% if __generate_certificate__certificate_subject_alternative_names | default(None, true) != None %}
+            -addext "subjectAltName = {{ __generate_certificate__certificate_subject_alternative_names | quote }}"
+          {% endif %}
+          -key {{ __generate_certificate__key_file | quote }}
+          {% if __generate_certificate__key_is_encrypted %}
+            -passin file:{{ __generate_certificate__key_passphrase_file | quote }}
+          {% endif %}
+          -out {{ __generate_certificate__certificate_file | quote }}
+      creates: "{{ __generate_certificate__certificate_file }}"
+
+  when: __generate_certificate__ca_parameters | default(None, true) == None

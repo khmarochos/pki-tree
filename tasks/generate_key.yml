@@ -1,0 +1,159 @@
+---
+
+#
+# Find the CA
+#
+- name: Prepare the variable for the CA name
+  set_fact:
+    __generate_key__ca_name_brief: "{{ ca_name_brief }}"
+
+# We have to reset it, as it might be set by one of previous passes :-(
+- name: Clean up the CA settings
+  set_fact:
+    __generate_key__ca_parameters:
+
+- name: Load the CA settings
+  set_fact:
+    __generate_key__ca_parameters: "{{ __pki_tree__ca_dictionary[__generate_key__ca_name_brief] }}"
+  when: __generate_key__ca_name_brief in __pki_tree__ca_dictionary
+
+#
+# KEY NAME
+#
+- name: Determine the key name
+  set_fact:
+    __generate_key__key_name: "{{ key_name }}"
+
+- name: Return the determined key name if needed
+  set_fact:
+    "{{ result_key_name }}": "{{ __generate_key__key_name }}"
+  when: result_key_name | default(None, true) != None
+
+#
+# KEY ENCRYPTION
+#
+- name: Determine the key encryption method
+  set_fact:
+    __generate_key__key_is_encrypted: "{{ key_is_encrypted | default(false) }}"
+
+- name: Return the determined key encryption method if needed
+  set_fact:
+    "{{ result_key_is_encrypted }}": "{{ __generate_key__key_is_encrypted }}"
+  when: result_key_is_encrypted | default(None, true) != None
+
+#
+# KEY FILE NAME
+#
+- name: Determine the key file name
+  set_fact:
+    __generate_key__key_file: "{{ key_file }}"
+  when: key_file | default(None, true) != None
+
+- name: Determine the key file name (fallback)
+  set_fact:
+    __generate_key__key_file: >-
+      {{
+        __generate_key__ca_parameters.ca_private_directory | mandatory
+        ~ '/'
+        ~ __generate_key__key_name
+        ~ pki_basename_key_file_postfix
+      }}
+  when: key_file | default(None, true) == None
+
+- name: Return the determined key file name if needed
+  set_fact:
+    "{{ result_key_file }}": "{{ __generate_key__key_file }}"
+  when: result_key_file | default(None, true) != None
+
+#
+# KEY SIZE
+#
+- name: Determine the key size
+  set_fact:
+    __generate_key__key_size: "{{ key_size }}"
+  when: key_size | default(None, true) != None
+
+- name: Determine the key size (fallback)
+  set_fact:
+    __generate_key__key_size: "{{ __generate_key__ca_parameters.ca_key_size }}"
+  when: key_size | default(None, true) == None
+
+- name: Return the determined key size if needed
+  set_fact:
+    "{{ result_key_size }}": "{{ __generate_key__key_size }}"
+  when: result_key_size | default(None, true) != None
+
+#
+# If the desired CA key is encrypted
+#
+- block:
+
+  #
+  # KEY PASSPHRASE FILE NAME
+  #
+  - name: Determine the key passphrase file name
+    set_fact:
+      __generate_key__key_passphrase_file: "{{ key_passphrase_file }}"
+    when: key_passphrase_file | default(None, true) != None
+
+  - name: Determine the key passphrase file name (fallback)
+    set_fact:
+      __generate_key__key_passphrase_file: >-
+        {{
+          __generate_key__ca_parameters.ca_private_directory | mandatory
+          ~ '/'
+          ~ __generate_key__key_name
+          ~ pki_basename_key_passphrase_file_postfix
+        }}
+    when: key_passphrase_file | default(None, true) == None
+
+  - name: Return the key passphrase file name if needed
+    set_fact:
+      "{{ result_key_passphrase_file }}": "{{ __generate_key__key_passphrase_file }}"
+    when: result_key_passphrase_file | default(None, true) != None
+
+  #
+  #
+  #
+  - name: "Create or lookup the passphrase for the key"
+    set_fact:
+      __generate_key__key_passphrase: "{{ lookup('password', __generate_key__key_passphrase_file ~ ' length=32') }}"
+    no_log: true
+
+  - name: "Change the access permissions for the file containing the passphrase for the key"
+    file:
+      path: "{{ __generate_key__key_passphrase_file }}"
+      mode: 0600
+      force: yes
+
+  - name: "Generate the key (encrypted)"
+    openssl_privatekey:
+      path: "{{ __generate_key__key_file }}"
+      size: "{{ __generate_key__key_size }}"
+      passphrase: "{{ __generate_key__key_passphrase }}"
+      cipher: auto
+    no_log: true
+
+  when: __generate_key__key_is_encrypted
+
+#
+# If the desired CA key is not encrypted
+#
+- block:
+
+    - name: "Generate the key (RSA)"
+      openssl_privatekey:
+        path: "{{ __generate_key__key_file }}"
+        size: "{{ __generate_key__key_size }}"
+      no_log: true
+
+  when: not __generate_key__key_is_encrypted
+
+#
+# Change the access permissions in any case
+#
+- name: "Change the access permissions for the file containing the key"
+  file:
+    path: "{{ __generate_key__key_file }}"
+    mode: 0600
+    force: yes

@@ -1,0 +1,400 @@
+---
+
+- name: "Initializing an empty dictionary for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: { }
+
+- name: "Setting ca_name_brief for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_name_brief':
+              ca_parameters.ca_name_brief
+          })
+      }}
+
+- name: "Setting ca_name_full for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_name_full':
+              ca_parameters.ca_name_full |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_name_brief
+                )
+          })
+      }}
+
+- name: "Setting ca_parent for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_parent':
+              (
+                (ca_parameters.ca_parent | default(None, true) != None) and
+                (ca_parameters.ca_parent != ca_parameters.ca_name_brief)
+              ) | ternary(
+                ca_parameters.ca_parent,
+                None
+              )
+          })
+      }}
+
+- name: "Setting ca_openssl_configuration_section for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_openssl_configuration_section':
+              ca_parameters.ca_openssl_configuration_section |
+                default(
+                  'CA_'
+                  ~ __setup_ca_dictionary__ca_dictionary_piece.ca_name_brief
+                )
+          })
+      }}
+
+- name: "Setting ca_subject_common_name for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_subject_common_name':
+              ca_parameters.ca_subject_common_name |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_name_full
+                  ~ ' CA of '
+                  ~ pki_domain
+                )
+          })
+      }}
+
+- name: "Setting ca_subject for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_subject':
+              ca_parameters.ca_subject |
+                default(
+                  '/C='
+                  ~ ca_parameters.pki_subject_country |
+                          default(pki_subject_country)
+                  ~ '/ST=' ~
+                    ca_parameters.pki_subject_state_or_province |
+                          default(pki_subject_state_or_province)
+                  ~ '/L='
+                  ~ ca_parameters.pki_subject_locality |
+                          default(pki_subject_locality)
+                  ~ '/O='
+                  ~ ca_parameters.pki_subject_organization |
+                          default(pki_subject_organization)
+                  ~ '/OU='
+                  ~ ca_parameters.pki_subject_organizational_unit |
+                          default(pki_subject_organizational_unit)
+                  ~ '/CN=' 
+                  ~ ca_parameters.pki_subject_common_name |
+                          default(__setup_ca_dictionary__ca_dictionary_piece.ca_subject_common_name)
+                  ~ '/emailAddress='
+                  ~ ca_parameters.pki_subject_email_address |
+                          default(pki_subject_email_address)
+                )
+            })
+        }}
+
+- name: "Setting ca_term for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_term':
+              ca_parameters.ca_term |
+                default(
+                  pki_term
+                )
+          })
+      }}
+
+- name: "Setting ca_directory for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_directory':
+              ca_parameters.ca_directory |
+                default(
+                  pki_directory
+                  ~ '/'
+                  ~ __setup_ca_dictionary__ca_dictionary_piece.ca_name_brief
+                )
+          })
+      }}
+
+- name: "Setting ca_private_directory for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_private_directory':
+              ca_parameters.ca_private_directory |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_directory
+                  ~ '/'
+                  ~ pki_basename_private_directory
+                )
+          })
+      }}
+
+- name: "Setting ca_key_file for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_key_file':
+              ca_parameters.ca_key_file |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_private_directory
+                  ~ '/'
+                  ~ pki_basename_key_file
+                )
+          })
+      }}
+
+- name: "Setting _ca_key_size for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_key_size':
+              ca_parameters.ca_key_size |
+                default(
+                  pki_key_size
+                )
+          })
+      }}
+
+- name: "Setting ca_key_is_encrypted for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_key_is_encrypted':
+              ca_parameters.ca_key_is_encrypted |
+                default(
+                  false
+                )
+          })
+      }}
+
+- name: "Setting ca_key_passphrase_file for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_key_passphrase_file':
+              ca_parameters.ca_key_passphrase_file |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_private_directory
+                  ~ '/'
+                  ~ pki_basename_key_passphrase_file
+                )
+          })
+      }}
+  when: __setup_ca_dictionary__ca_dictionary_piece.ca_key_is_encrypted
+
+- name: "Setting ca_keystore_file for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_keystore_file':
+              ca_parameters.ca_keystore_file |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_private_directory
+                  ~ '/'
+                  ~ pki_basename_keystore_file
+                )
+          })
+      }}
+
+- name: "Setting ca_keystore_passphrase_file for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_keystore_passphrase_file':
+              ca_parameters.ca_keystore_passphrase_file |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_private_directory
+                  ~ '/'
+                  ~ pki_basename_keystore_passphrase_file
+                )
+          })
+      }}
+
+- name: "Setting ca_certificate_signing_requests_directory for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_certificate_signing_requests_directory':
+              ca_parameters.ca_certificate_signing_requests_directory |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_directory
+                  ~ '/'
+                  ~ pki_basename_certificate_signing_requests_directory
+                )
+          })
+      }}
+
+- name: "Setting ca_certificate_signing_request_file for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_certificate_signing_request_file':
+              ca_parameters.certificate_signing_request_file |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_certificate_signing_requests_directory
+                  ~ '/ca_'
+                  ~ __setup_ca_dictionary__ca_dictionary_piece.ca_name_brief
+                  ~ '.csr.pem'
+                )
+          })
+      }}
+
+- name: "Setting ca_certificates_directory for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_certificates_directory':
+              ca_parameters.ca_certificates_directory |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_directory
+                  ~ '/'
+                  ~ pki_basename_certificates_directory
+                )
+          })
+      }}
+
+- name: "Setting ca_certificate_file for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_certificate_file':
+              ca_parameters.ca_certificate_file |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_certificates_directory
+                  ~ '/'
+                  ~ pki_basename_certificate_file
+                )
+          })
+      }}
+
+- name: "Setting ca_certificate_chain_file for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_certificate_chain_file':
+              ca_parameters.ca_certificate_chain_file |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_certificates_directory
+                  ~ '/'
+                  ~ pki_basename_certificate_chain_file
+                )
+          })
+      }}
+
+- name: "Setting ca_revocations_directory for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_revocations_directory':
+              ca_parameters.ca_revocations_directory |
+                default(
+                  __setup_ca_dictionary__ca_dictionary_piece.ca_certificates_directory
+                  ~ '/'
+                  ~ pki_basename_revocations_directory
+                )
+          })
+      }}
+
+- name: "Setting ca_strict for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_strict':
+              ca_parameters.ca_strict |
+                default(
+                  true
+                )
+          })
+      }}
+
+- name: "Setting ca_stubby for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    __setup_ca_dictionary__ca_dictionary_piece: >-
+      {{
+        __setup_ca_dictionary__ca_dictionary_piece |
+          combine({
+            'ca_stubby':
+              ca_parameters.ca_stubby |
+                default(
+                  true
+                )
+          })
+      }}
+
+- name: "Storing the result to the CA dictionary for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    "{{ ca_dictionary_variable_name }}": >-
+      {{
+        vars[ca_dictionary_variable_name] |
+          combine({__setup_ca_dictionary__ca_dictionary_piece.ca_name_brief: __setup_ca_dictionary__ca_dictionary_piece})
+      }}
+
+- name: "Storing the result to the OpenSSL configuration block for the {{ ca_parameters.ca_name_full }} CA"
+  set_fact:
+    "{{ ca_openssl_configuration_block_variable_name }}": >-
+      {{ vars[ca_openssl_configuration_block_variable_name] }}
+
+
+      {{
+        lookup(
+          'template',
+          'openssl.cnf_block.j2',
+          template_vars={
+            'ca_dictionary_piece': __setup_ca_dictionary__ca_dictionary_piece
+          }
+        )
+      }}

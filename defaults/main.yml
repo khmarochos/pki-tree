@@ -1,2 +1,37 @@
 ---
-# defaults file for pki-tree
+
+pki_domain: localdomain
+pki_directory_mode: 0755
+pki_ca_list:
+  - ca_name_brief: root
+    ca_name_full: Root CA
+    ca_key_is_encrypted: true
+    ca_key_size: 4096
+    ca_strict: false
+    ca_stubby: false
+pki_basename_openssl_configuration_file: "openssl.cnf"
+pki_basename_private_directory: "private"
+pki_basename_key_file_postfix: ".key.pem"
+pki_basename_key_file: "ca{{ pki_basename_key_file_postfix }}"
+pki_basename_key_passphrase_file_postfix: ".key.passphrase"
+pki_basename_key_passphrase_file: "ca{{ pki_basename_key_passphrase_file_postfix }}"
+pki_basename_keystore_file_postfix: ".p12"
+pki_basename_keystore_file: "ca{{ pki_basename_keystore_file_postfix }}"
+pki_basename_keystore_passphrase_file_postfix: ".p12.passphrase"
+pki_basename_keystore_passphrase_file: "ca{{ pki_basename_keystore_passphrase_file_postfix }}"
+pki_basename_certificate_signing_requests_directory: "requests"
+pki_basename_certificate_signing_requests_file_postfix: ".csr.pem"
+pki_basename_certificates_directory: "certificates"
+pki_basename_certificate_file_postfix: ".crt.pem"
+pki_basename_certificate_file: "ca{{ pki_basename_certificate_file_postfix }}"
+pki_basename_certificate_chain_file: "ca-chain{{ pki_basename_certificate_file_postfix }}"
+pki_basename_revocations_directory: "revocations"
+pki_openssl_configuration_file: "{{ pki_directory }}/{{ pki_basename_openssl_configuration_file }}"
+pki_key_size: 4096
+pki_term: 1
+pki_subject_country:
+pki_subject_state_or_province:
+pki_subject_locality:
+pki_subject_organization:
+pki_subject_organizational_unit:
+pki_subject_email_address:

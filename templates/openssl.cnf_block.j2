@@ -1,0 +1,20 @@
+[ {{ ca_dictionary_piece.ca_openssl_configuration_section }} ]
+dir               = {{ ca_dictionary_piece.ca_directory }}
+certs             = {{ ca_dictionary_piece.ca_certificates_directory }}
+new_certs_dir     = {{ ca_dictionary_piece.ca_directory }}/certificates_new
+database          = {{ ca_dictionary_piece.ca_directory }}/index.txt
+serial            = {{ ca_dictionary_piece.ca_directory }}/serial
+RANDFILE          = {{ ca_dictionary_piece.ca_private_directory }}/.rand
+private_key       = {{ ca_dictionary_piece.ca_key_file }}
+certificate       = {{ ca_dictionary_piece.ca_certificate_file }}
+crlnumber         = {{ ca_dictionary_piece.ca_directory }}/crlnumber
+crl_dir           = {{ ca_dictionary_piece.ca_revocations_directory }}
+crl               = {{ ca_dictionary_piece.ca_revocations_directory }}/ca.crl.pem
+crl_extensions    = crl_ext
+default_crl_days  = 30
+default_md        = sha256
+name_opt          = ca_default
+cert_opt          = ca_default
+default_days      = 375
+preserve          = no
+policy            = {{ ca_dictionary_piece.ca_strict | ternary('policy_strict', 'policy_loose') }}

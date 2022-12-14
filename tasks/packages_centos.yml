@@ -1,0 +1,19 @@
+---
+
+- name: Install OpenSSL
+  yum:
+    name: openssl
+    state: latest
+  vars:
+    ansible_python_interpreter: /bin/python2.7
+  become: yes
+  become_user: root
+
+- name: Install OpenJDK
+  yum:
+    name: openjdk-8
+    state: latest
+  vars:
+    ansible_python_interpreter: /bin/python2.7
+  become: yes
+  become_user: root

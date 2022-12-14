@@ -1,0 +1,73 @@
+---
+
+- name: "Install the {{ ca.ca_name_full }} CA file hierarchy"
+  include_tasks:
+    file: install_tree.yml
+  vars:
+    source_directory: files/ca_skeleton
+    destination_directory: "{{ ca.ca_directory }}"
+    treat_files_as_templates: false
+
+# Encryption key
+
+- name: "Generate the {{ ca.ca_name_full }} CA key"
+  include_tasks:
+    file: generate_key.yml
+  vars:
+    ca_name_brief: "{{ ca.ca_name_brief }}"
+    key_name: "{{ ca.ca_name_brief }}"
+    key_is_encrypted: "{{ ca.ca_key_is_encrypted }}"
+    key_passphrase_file: "{{ ca.ca_key_passphrase_file }}"
+    key_file: "{{ ca.ca_key_file }}"
+    key_size: "{{ ca.ca_key_size }}"
+
+# Certificate
+
+- name: "Issue the {{ ca.ca_name_full }} CA certificate"
+  include_tasks:
+    file: generate_certificate.yml
+  vars:
+    ca_name_brief: "{{ ca.ca_parent | default(None, true) }}"
+    certificate_name: "{{ ca.ca_name_brief }}"
+    certificate_file: "{{ ca.ca_certificate_file }}"
+    certificate_signing_request_file: "{{ ca.ca_certificate_signing_request_file }}"
+    certificate_subject: "{{ ca.ca_subject }}"
+    certificate_extensions: "{{ ca.ca_stubby | ternary('v3_intermediate_ca', 'v3_ca') }}"
+    certificate_term: "{{ ca.ca_term }}"
+    key_is_encrypted: "{{ ca.ca_key_is_encrypted }}"
+    key_file: "{{ ca.ca_key_file }}"
+    key_passphrase_file: "{{ ca.ca_key_passphrase_file | default(key_is_encrypted | ternary(mandatory, None)) }}"
+    key_size: "{{ ca.ca_key_size }}"
+
+# Certificate chain
+
+- name: "Initialize the variable for the {{ ca.ca_name_full }} CA certification chain"
+  set_fact:
+    __setup_ca__ca_chain: "{{ lookup('file', ca.ca_certificate_file) }}"
+
+- name: "Append the parent's CA certificate chain to the {{ ca.ca_name_full }} CA certification chain"
+  set_fact:
+    __setup_ca__ca_chain: "{{ __setup_ca__ca_chain }}\n{{ lookup('file', ca_parent.ca_certificate_chain_file) }}"
+  when: ca.ca_parent | default(None, true) != None
+
+- name: "Render the {{ ca.ca_name_full }} CA certificate chain"
+  copy:
+    content: "{{ __setup_ca__ca_chain }}"
+    dest: "{{ ca.ca_certificate_chain_file }}"
+
+# PKCS#12 keystore
+
+- name: "Create a PKCS#12 keystore for the {{ ca.ca_name_full }} CA certificate"
+  include_tasks:
+    file: generate_keystore.yml
+  vars:
+    ca_name_brief: "{{ ca.ca_name_brief }}"
+    keystore_name: "{{ ca.ca_name_brief }}"
+    keystore_file: "{{ ca.ca_keystore_file }}"
+    keystore_passphrase_file: "{{ ca.ca_keystore_passphrase_file }}"
+    key_file: "{{ ca.ca_key_file }}"
+    key_passphrase_file: "{{ ca.ca_key_is_encrypted | ternary(ca.ca_key_passphrase_file, None) }}"
+    certificate_file: "{{ ca.ca_certificate_file }}"
+    certificate_alias: "{{ ca.ca_name_full }}"
+  when: ca.ca_keystore_file | default(None, true) != None
+

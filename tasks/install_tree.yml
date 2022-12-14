@@ -1,0 +1,43 @@
+---
+
+- name: Create the destination directory
+  file:
+    path: "{{ destination_directory }}"
+    state: directory
+    mode: "{{ destination_directory_mode | default(omit) }}"
+
+- name: Create the directory tree
+  file:
+    path: "{{ destination_directory }}/{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+  with_filetree: "{{ source_directory }}"
+  when: item.state == "directory"
+
+- name: Render templates
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ destination_directory }}/{{ item.path }}"
+    mode: "{{ item.mode }}"
+    force: "{{ force | default(false) | bool }}"
+  with_filetree: "{{ source_directory }}"
+  when: (item.state == "file") and (treat_files_as_templates | bool)
+
+- name: Copy files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ destination_directory }}/{{ item.path }}"
+    mode: "{{ item.mode }}"
+    force: "{{ force | default(false) | bool }}"
+  with_filetree: "{{ source_directory }}"
+  when: (item.state == "file") and (not (treat_files_as_templates | bool))
+
+- name: Recreate symlinks
+  file:
+    src: "{{ item.src }}"
+    dest: "{{ destination_directory }}/{{ item.path }}"
+    state: link
+    force: "{{ force | default(false) | bool }}"
+    mode: "{{ item.mode }}"
+  with_filetree: "{{ source_directory }}"
+  when: item.state == "link"
