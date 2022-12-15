@@ -18,13 +18,6 @@
 
 - name: Comprehend the PKI tree
   include_tasks: setup_ca_dictionary.yml
-  vars:
-    ca_parameters: "{{ ca_to_define }}"
-    ca_dictionary_variable_name: __pki_tree__ca_dictionary
-    ca_openssl_configuration_block_variable_name: __pki_tree__ca_openssl_configuration_block
-  loop: "{{ pki_ca_list }}"
-  loop_control:
-    loop_var: ca_to_define
 
 - name: Install the OpenSSL configuration file
   template:

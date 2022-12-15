@@ -1,6 +1,14 @@
 ---
 
 #
+# Make sure that we have the PKI tree configured
+#
+- name: Comprehend the PKI tree configuration if needed
+  include_tasks: setup_ca_dictionary.yml
+  vars:
+    cached_ca_dictionary: true
+
+#
 # Find the CA
 #
 - name: Prepare the variable for the CA name
