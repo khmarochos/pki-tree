@@ -28,6 +28,19 @@
 #
 #
 #
+- name: Return the CA certificate file name if needed
+  set_fact:
+    "{{ result_ca_certificate_file }}": "{{ __generate_certificate__ca_parameters.ca_certificate_file }}"
+  when: result_ca_certificate_file | default(None, true) != None
+
+- name: Return the CA certificate chain file name if needed
+  set_fact:
+    "{{ result_ca_certificate_chain_file }}": "{{ __generate_certificate__ca_parameters.ca_certificate_chain_file }}"
+  when: result_ca_certificate_chain_file | default(None, true) != None
+
+#
+#
+#
 - name: Determine the certificate name
   set_fact:
     __generate_certificate__certificate_name: "{{ certificate_name | mandatory }}"
