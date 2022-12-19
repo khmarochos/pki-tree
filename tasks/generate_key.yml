@@ -96,51 +96,51 @@
 #
 - block:
 
-  #
-  # KEY PASSPHRASE FILE NAME
-  #
-  - name: Determine the key passphrase file name
-    set_fact:
-      __generate_key__key_passphrase_file: "{{ key_passphrase_file }}"
-    when: key_passphrase_file | default(None, true) != None
+    #
+    # KEY PASSPHRASE FILE NAME
+    #
+    - name: Determine the key passphrase file name
+      set_fact:
+        __generate_key__key_passphrase_file: "{{ key_passphrase_file }}"
+      when: key_passphrase_file | default(None, true) != None
 
-  - name: Determine the key passphrase file name (fallback)
-    set_fact:
-      __generate_key__key_passphrase_file: >-
-        {{
-          __generate_key__ca_parameters.ca_private_directory | mandatory
-          ~ '/'
-          ~ __generate_key__key_name
-          ~ pki_basename_key_passphrase_file_postfix
-        }}
-    when: key_passphrase_file | default(None, true) == None
+    - name: Determine the key passphrase file name (fallback)
+      set_fact:
+        __generate_key__key_passphrase_file: >-
+          {{
+            __generate_key__ca_parameters.ca_private_directory | mandatory
+            ~ '/'
+            ~ __generate_key__key_name
+            ~ pki_basename_key_passphrase_file_postfix
+          }}
+      when: key_passphrase_file | default(None, true) == None
 
-  - name: Return the key passphrase file name if needed
-    set_fact:
-      "{{ result_key_passphrase_file }}": "{{ __generate_key__key_passphrase_file }}"
-    when: result_key_passphrase_file | default(None, true) != None
+    - name: Return the key passphrase file name if needed
+      set_fact:
+        "{{ result_key_passphrase_file }}": "{{ __generate_key__key_passphrase_file }}"
+      when: result_key_passphrase_file | default(None, true) != None
 
-  #
-  #
-  #
-  - name: "Create or lookup the passphrase for the key"
-    set_fact:
-      __generate_key__key_passphrase: "{{ lookup('password', __generate_key__key_passphrase_file ~ ' length=32') }}"
-    no_log: true
+    #
+    #
+    #
+    - name: "Create or lookup the passphrase for the key"
+      set_fact:
+        __generate_key__key_passphrase: "{{ lookup('password', __generate_key__key_passphrase_file ~ ' length=32') }}"
+      no_log: true
 
-  - name: "Change the access permissions for the file containing the passphrase for the key"
-    file:
-      path: "{{ __generate_key__key_passphrase_file }}"
-      mode: 0600
-      force: yes
+    - name: "Change the access permissions for the file containing the passphrase for the key"
+      file:
+        path: "{{ __generate_key__key_passphrase_file }}"
+        mode: 0600
+        force: yes
 
-  - name: "Generate the key (encrypted)"
-    openssl_privatekey:
-      path: "{{ __generate_key__key_file }}"
-      size: "{{ __generate_key__key_size }}"
-      passphrase: "{{ __generate_key__key_passphrase }}"
-      cipher: auto
-    no_log: true
+    - name: "Generate the key (encrypted)"
+      openssl_privatekey:
+        path: "{{ __generate_key__key_file }}"
+        size: "{{ __generate_key__key_size }}"
+        passphrase: "{{ __generate_key__key_passphrase }}"
+        cipher: auto
+      no_log: true
 
   when: __generate_key__key_is_encrypted
 

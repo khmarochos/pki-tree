@@ -153,7 +153,7 @@
       }}
   when: key_passphrase_file | default(None, true) == None
 
-  name: Return the key passphrase file name if needed
+- name: Return the key passphrase file name if needed
   set_fact:
     "{{ result_key_passphrase_file }}": "{{ __generate_certificate__key_passphrase_file }}"
   when: result_key_passphrase_file | default(None, true) != None

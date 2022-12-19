@@ -35,4 +35,4 @@
     loop: "{{ pki_ca_list }}"
     loop_control:
       loop_var: ca_to_setup
-  when: not (skip_ca_setup | default(false))
+  when: not (skip_ca_install | default(false))
