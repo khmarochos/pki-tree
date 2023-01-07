@@ -220,11 +220,7 @@
       {{
         certificate_subject_alternative_names | map(
           'regex_replace',
-          '^(((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])\.?\b){4})$',
-          'IP:\1'
-        ) | map(
-          'regex_replace',
-          '^((?!IP:).+)$',
+          '^(.+)$',
           'DNS:\1'
         ) | join(',')
       }}
