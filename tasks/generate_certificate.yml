@@ -211,10 +211,20 @@
     "{{ result_certificate_subject }}": "{{ __generate_certificate__certificate_subject }}"
   when: result_certificate_subject | default(None, true) != None
 
+# - debug:
+#     msg: "{{ certificate_name }}"
+# - block:
+#     - debug:
+#         msg: "{{ certificate_subject_alternative_names }}"
+#     - pause:
+#         prompt: "?"
+#   when: certificate_name == 'vault1.production.kloudster.net'
+
 #
 #
 #
-- name: Determine the certificate subject alternative names
+
+- name: Determine the certificate subject alternative names (domain names)
   set_fact:
     __generate_certificate__certificate_subject_alternative_names: >-
       {{
@@ -222,9 +232,13 @@
           'regex_replace',
           '^(.+)$',
           'DNS:\1'
+        ) | map(
+          'regex_replace',
+          '^DNS:(IP:.+)$',
+          '\1'
         ) | join(',')
       }}
-  when: certificate_subject_alternative_names | default(None, true) != None
+  when: certificate_subject_alternative_names | default([]) | length > 0
 
 #
 #
